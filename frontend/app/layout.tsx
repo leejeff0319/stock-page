@@ -1,6 +1,18 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Sidebar from "@/components/Sidebar";
+import { SidebarItem } from "@/components/Sidebar";
+import {
+  LifeBuoy,
+  Receipt,
+  Boxes,
+  Package,
+  UserCircle,
+  BarChart3,
+  LayoutDashboard,
+  Settings,
+} from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,9 +37,28 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex`}
       >
-        {children}
+        <Sidebar>
+          <SidebarItem
+            icon={<LayoutDashboard size={20} />}
+            text="Dashboard"
+            alert
+          />
+          <SidebarItem
+            icon={<BarChart3 size={20} />}
+            text="Statistics"
+            active
+          />
+          <SidebarItem icon={<UserCircle size={20} />} text="Users" />
+          <SidebarItem icon={<Boxes size={20} />} text="Inventory" />
+          <SidebarItem icon={<Package size={20} />} text="Orders" alert />
+          <SidebarItem icon={<Receipt size={20} />} text="Billings" />
+          <hr className="my-3" />
+          <SidebarItem icon={<Settings size={20} />} text="Settings" />
+          <SidebarItem icon={<LifeBuoy size={20} />} text="Help" />
+        </Sidebar>
+        <main className="flex-1">{children}</main>
       </body>
     </html>
   );
