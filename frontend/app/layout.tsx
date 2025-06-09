@@ -43,20 +43,21 @@ export default function RootLayout({
           <SidebarItem
             icon={<LayoutDashboard size={20} />}
             text="Dashboard"
+            href="/dashboard"
             alert
           />
           <SidebarItem
             icon={<BarChart3 size={20} />}
             text="Statistics"
-            active
+            href="/statistics"
           />
-          <SidebarItem icon={<UserCircle size={20} />} text="Users" />
-          <SidebarItem icon={<Boxes size={20} />} text="Inventory" />
-          <SidebarItem icon={<Package size={20} />} text="Orders" alert />
-          <SidebarItem icon={<Receipt size={20} />} text="Billings" />
+          <SidebarItem icon={<LifeBuoy size={20} />} text="Stocks" href="/stocks" />
+          <SidebarItem icon={<Boxes size={20} />} text="Portfolio" href="/portfolio" />
+          <SidebarItem icon={<Package size={20} />} text="Backtest" href="/backtest" />
+          <SidebarItem icon={<Receipt size={20} />} text="Billings" href="/billings" />
           <hr className="my-3" />
-          <SidebarItem icon={<Settings size={20} />} text="Settings" />
-          <SidebarItem icon={<LifeBuoy size={20} />} text="Help" />
+          <SidebarItem icon={<Settings size={20} />} text="Settings" href="/settings" />
+          <SidebarItem icon={<UserCircle size={20} />} text="User" href="/user" />
         </Sidebar>
         <main className="flex-1">{children}</main>
       </body>

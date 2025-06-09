@@ -1,19 +1,19 @@
-'use client'
+"use client";
 
-import React, { useState, createContext, useContext, ReactNode, FC } from "react";
+import React, {
+  useState,
+  createContext,
+  useContext,
+  ReactNode,
+  FC,
+} from "react";
 import {
   ChevronFirst,
   ChevronLast,
-  LifeBuoy,
-  Receipt,
-  Boxes,
-  Package,
-  UserCircle,
-  BarChart3,
-  LayoutDashboard,
-  Settings,
-  MoreVertical
+  MoreVertical,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 type SidebarContextType = {
   expanded: boolean;
@@ -29,7 +29,7 @@ const Sidebar: FC<SidebarProps> = ({ children }) => {
   const [expanded, setExpanded] = useState(true);
   return (
     <aside className="h-screen">
-      <nav className="h-full flex flex-col bg-white border-r shadow-sm">
+      <nav className="h-full flex flex-col bg-gray-900 border-r shadow-sm">
         <div
           className="p-4 pb-2 fl
         ex justify-between items-center"
@@ -80,68 +80,73 @@ const Sidebar: FC<SidebarProps> = ({ children }) => {
 };
 
 type SidebarItemProps = {
-    icon: ReactNode;
-    text: string;
-    active?: boolean;
-    alert?: boolean;
-  };
+  icon: ReactNode;
+  text: string;
+  active?: boolean;
+  alert?: boolean;
+  href: string;
+};
 
-  export const SidebarItem: FC<SidebarItemProps> = ({
-    icon,
-    text,
-    active = false,
-    alert = false,
-  }) => {
-    const context = useContext(SidebarContext);
-    if (!context) {
-      throw new Error("SidebarItem must be used within a SidebarProvider");
-    }
-  
-    const { expanded } = context;
-  
-    return (
-    <li
-      className={`
+export const SidebarItem: FC<SidebarItemProps> = ({
+  icon,
+  text,
+  alert = false,
+  href,
+}) => {
+  const context = useContext(SidebarContext);
+  if (!context) {
+    throw new Error("SidebarItem must be used within a SidebarProvider");
+  }
+
+  const { expanded } = context;
+  const pathname = usePathname();
+  const isActive = pathname === href;
+
+  return (
+    <Link href={href} passHref>
+      <li
+        className={`
             relative flex items-center py-2 px-3 my-1
             font-medium rounded-md cursor-pointer
             transition-colors group
             ${
-              active
+              isActive
                 ? "bg-gradient-to-tr from-indigo-200 to-indigo-100 text-indigo-800"
                 : "hoverLbg-indigo-50 text-gray-600"
             }
         `}
-    >
-      {icon}
-      <span
-        className={`
+      >
+        {icon}
+        <span
+          className={`
                     overflow-hidden transition-all ${
                       expanded ? "w-52 ml-3" : "w-0"
                     }
                 `}
-      >
-        {text}
-      </span>
-      {alert && (
-        <div
-          className={`absolute right-2 w-2 h-2 rounded bg-indigo-400
+        >
+          {text}
+        </span>
+        {alert && (
+          <div
+            className={`absolute right-2 w-2 h-2 rounded bg-indigo-400
             ${expanded ? "" : "top-2"}`}
-        />
-      )}
+          />
+        )}
 
-      {expanded && (
-        <div
-          className={`
+        {expanded && (
+          <div
+            className={`
       absolute left-full rounded-md px-2 py-1 ml-6
       bg-indigo-100 text-indigo-800 text-sm
       invisible opacity-20 -transalte-x-3 transition-all
       group-hover:visible group-hover:opacity-100 group-hover:translate-x-0`}
-        >
-          {text}
-        </div>
-      )}
-    </li>
+          >
+            {text}
+          </div>
+        )}
+      </li>
+    </Link>
   );
-}
+};
 
 export default Sidebar;
