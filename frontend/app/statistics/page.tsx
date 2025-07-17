@@ -12,7 +12,7 @@ export default function Home() {
       <div className="border border-black p-2">
         <input
           type="text"
-          placeholder="Search Bar"
+          placeholder="Search a player"
           className="w-full outline-none"
         />
       </div>
@@ -43,10 +43,7 @@ export default function Home() {
             ))}
           </tbody>
         </table>
-        <div className="border-t border-black text-center text-sm p-1">
-          Side bar to navigate the table
         </div>
-      </div>
 
       {/* Stat Buttons */}
       <div className="grid grid-cols-5 gap-2 border border-black p-4">
@@ -59,11 +56,6 @@ export default function Home() {
           </button>
         ))}
       </div>
-
-      {/* Footer text */}
-      <p className="text-center text-sm">
-        List of Stats from the table in buttons that can be clicked/checked
-      </p>
 
       {/* Create Model Button */}
       <div className="flex justify-end">
