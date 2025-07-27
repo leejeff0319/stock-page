@@ -31,8 +31,7 @@ const Sidebar: FC<SidebarProps> = ({ children }) => {
     <aside className="h-screen-dynamic min-h-screen">
       <nav className="h-full flex flex-col bg-gray-900 border-r shadow-sm">
         <div
-          className="p-4 pb-2 fl
-        ex justify-between items-center"
+          className="p-4 pb-2 flex justify-between items-center"
         >
           <img
             src="https://img.logoipsum.com/243.svg"
