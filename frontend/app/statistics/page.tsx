@@ -9,23 +9,46 @@ export default function AutoMLPipeline() {
   const [isTraining, setIsTraining] = useState(false);
   const [dataProfilingResults, setDataProfilingResults] = useState<string | null>(null);
   const [bestModel, setBestModel] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       setSelectedFile(file);
-      
-      // TODO: Parse file to extract columns (this is a placeholder)
-      // In a real app, you would parse the CSV/Excel file here
-      const mockColumns = ['Column1', 'Column2', 'Column3', 'Target'];
-      setColumns(mockColumns);
+      setPreviewData([]);
+      setColumns([]);
     }
   };
 
-  const handleUpload = () => {
-    // TODO: Implement actual file upload logic
-    console.log('File uploaded:', selectedFile?.name);
-  };
+const handleUpload = async () => {
+  if (!selectedFile) return;
+
+  try {
+    setPreviewData([]);
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    const response = await fetch('http://localhost:8000/upload-dataset', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Upload failed');
+    }
+
+    const result = await response.json();
+    setColumns(result.columns);
+    setPreviewData(result.sample_data);
+    console.log('Upload successful:', result);
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    setPreviewData([]);
+  }
+};
 
   const handleTrainModel = () => {
     setIsTraining(true);
@@ -47,13 +70,11 @@ export default function AutoMLPipeline() {
       <h1 className="text-2xl font-bold mb-6">Automated Machine Learning Pipeline</h1>
       
       <div className="mb-6">
-        <label className="block text-sm font-medium mb-2" htmlFor="dataset-upload">
-          Choose a dataset to upload
-        </label>
+        <h2 className="text-lg font-medium mb-2">Choose a dataset to upload</h2>
         <input
           id="dataset-upload"
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv"
           onChange={handleFileChange}
           className="block w-full text-sm text-gray-500
             file:mr-4 file:py-2 file:px-4
@@ -67,6 +88,43 @@ export default function AutoMLPipeline() {
         )}
       </div>
       
+      {/* Preview Data Table */}
+      {previewData && previewData.length > 0 && columns && columns.length > 0 && (
+        <div className="mb-6 border rounded-lg overflow-hidden">
+          <h3 className="bg-gray-100 p-2 font-medium">Dataset Preview (First 5 Rows)</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {columns.map((col) => (
+                    <th 
+                      key={col} 
+                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {previewData.map((row, i) => (
+                  <tr key={i}>
+                    {columns.map((col) => (
+                      <td 
+                        key={`${i}-${col}`} 
+                        className="px-4 py-2 whitespace-nowrap text-sm text-gray-500"
+                      >
+                        {row[col]?.toString()}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={handleUpload}
         disabled={!selectedFile}
