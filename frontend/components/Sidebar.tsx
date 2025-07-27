@@ -28,7 +28,7 @@ type SidebarProps = {
 const Sidebar: FC<SidebarProps> = ({ children }) => {
   const [expanded, setExpanded] = useState(true);
   return (
-    <aside className="h-screen">
+    <aside className="h-screen-dynamic min-h-screen">
       <nav className="h-full flex flex-col bg-gray-900 border-r shadow-sm">
         <div
           className="p-4 pb-2 fl
