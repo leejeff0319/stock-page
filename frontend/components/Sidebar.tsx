@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, {
   useState,
@@ -29,11 +29,8 @@ const Sidebar: FC<SidebarProps> = ({ children }) => {
   const [expanded, setExpanded] = useState(true);
   return (
     <aside className="h-screen-dynamic min-h-screen">
-      <nav className="h-full flex flex-col bg-gray-900 border-r shadow-sm">
-        <div
-          className="p-4 pb-2 fl
-        ex justify-between items-center"
-        >
+      <nav className="h-full flex flex-col bg-gray-900 border-r shadow-sm text-white">
+        <div className="p-4 pb-2 flex justify-between items-center">
           <img
             src="https://img.logoipsum.com/243.svg"
             className={`overflow-hidden transition-all ${
@@ -108,7 +105,7 @@ export const SidebarItem: FC<SidebarItemProps> = ({
         className={`
             relative flex items-center py-2 px-3 my-1
             font-medium rounded-md cursor-pointer
-            transition-colors group
+            transition-colors group text-white
             ${
               isActive
                 ? "bg-gradient-to-tr from-indigo-200 to-indigo-100 text-indigo-800"
