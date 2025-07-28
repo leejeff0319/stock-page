@@ -49,11 +49,13 @@ export default function AutoMLPipeline() {
           std?: number;
           top_value?: any;
           freq?: number;
+          value_counts?: Record<string, number>;
         };
         sample_values: any[];
         distribution?: {
-          bins: number[];
+          bins?: number[];
           counts: number[];
+          categories?: string[];
         };
       };
     };
@@ -121,13 +123,30 @@ export default function AutoMLPipeline() {
   };
 
   const createDistributionChartData = (distribution: {
-    bins: number[];
+    bins?: number[];
     counts: number[];
+    categories?: string[];
   }) => {
-    // Create labels like "0-10", "10-20", etc.
-    const labels = distribution.bins.slice(0, -1).map((bin, i) => {
-      return `${bin.toFixed(2)}-${distribution.bins[i + 1].toFixed(2)}`;
-    });
+    // For categorical data
+    if (distribution.categories) {
+      return {
+        labels: distribution.categories,
+        datasets: [
+          {
+            label: "Value Counts",
+            data: distribution.counts,
+            backgroundColor: "rgba(75, 192, 192, 0.6)",
+            borderColor: "rgba(75, 192, 192, 1)",
+            borderWidth: 1,
+          },
+        ],
+      };
+    }
+
+    // For numeric data
+    const labels = distribution.bins?.slice(0, -1).map((bin, i) => {
+      return `${bin.toFixed(2)}-${distribution.bins![i + 1].toFixed(2)}`;
+    }) || [];
 
     return {
       labels,
@@ -171,46 +190,43 @@ export default function AutoMLPipeline() {
       </div>
 
       {/* Preview Data Table */}
-      {previewData &&
-        previewData.length > 0 &&
-        columns &&
-        columns.length > 0 && (
-          <div className="mb-6 border rounded-lg overflow-hidden">
-            <h3 className="bg-gray-100 p-2 font-medium">
-              Dataset Preview (First 5 Rows)
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
+      {previewData && previewData.length > 0 && columns && columns.length > 0 && (
+        <div className="mb-6 border rounded-lg overflow-hidden">
+          <h3 className="bg-gray-100 p-2 font-medium">
+            Dataset Preview (First 5 Rows)
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {columns.map((col) => (
+                    <th
+                      key={col}
+                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {previewData.map((row, i) => (
+                  <tr key={i}>
                     {columns.map((col) => (
-                      <th
-                        key={col}
-                        className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      <td
+                        key={`${i}-${col}`}
+                        className="px-4 py-2 whitespace-nowrap text-sm text-gray-500"
                       >
-                        {col}
-                      </th>
+                        {row[col]?.toString()}
+                      </td>
                     ))}
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {previewData.map((row, i) => (
-                    <tr key={i}>
-                      {columns.map((col) => (
-                        <td
-                          key={`${i}-${col}`}
-                          className="px-4 py-2 whitespace-nowrap text-sm text-gray-500"
-                        >
-                          {row[col]?.toString()}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
+      )}
 
       <button
         onClick={handleUpload}
@@ -259,11 +275,13 @@ export default function AutoMLPipeline() {
                         )}
                       </ul>
 
-                      {/* Distribution Chart */}
+                      {/* Distribution Chart - works for both numeric and categorical */}
                       {columnData.distribution && (
                         <div className="mt-2">
                           <h4 className="text-sm font-medium mb-1">
-                            Distribution
+                            {columnData.stats.value_counts
+                              ? "Category Distribution"
+                              : "Value Distribution"}
                           </h4>
                           <div className="h-48">
                             <Bar
@@ -278,13 +296,22 @@ export default function AutoMLPipeline() {
                                     beginAtZero: true,
                                     title: {
                                       display: true,
-                                      text: "Frequency",
+                                      text: columnData.stats.value_counts
+                                        ? "Count"
+                                        : "Frequency",
                                     },
                                   },
                                   x: {
                                     title: {
                                       display: true,
-                                      text: "Value Range",
+                                      text: columnData.stats.value_counts
+                                        ? "Categories"
+                                        : "Value Range",
+                                    },
+                                    ticks: {
+                                      autoSkip: false,
+                                      maxRotation: columnData.stats.value_counts ? 45 : 0,
+                                      minRotation: columnData.stats.value_counts ? 45 : 0,
                                     },
                                   },
                                 },
