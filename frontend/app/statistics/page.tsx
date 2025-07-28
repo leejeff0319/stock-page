@@ -1,6 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export default function AutoMLPipeline() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -32,6 +51,10 @@ export default function AutoMLPipeline() {
           freq?: number;
         };
         sample_values: any[];
+        distribution?: {
+          bins: number[];
+          counts: number[];
+        };
       };
     };
     correlation: {
@@ -95,6 +118,29 @@ export default function AutoMLPipeline() {
   const handleDownloadModel = () => {
     // TODO: Implement model download logic
     console.log("Downloading model...");
+  };
+
+  const createDistributionChartData = (distribution: {
+    bins: number[];
+    counts: number[];
+  }) => {
+    // Create labels like "0-10", "10-20", etc.
+    const labels = distribution.bins.slice(0, -1).map((bin, i) => {
+      return `${bin.toFixed(2)}-${distribution.bins[i + 1].toFixed(2)}`;
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Frequency",
+          data: distribution.counts,
+          backgroundColor: "rgba(54, 162, 235, 0.5)",
+          borderColor: "rgba(54, 162, 235, 1)",
+          borderWidth: 1,
+        },
+      ],
+    };
   };
 
   return (
@@ -191,28 +237,65 @@ export default function AutoMLPipeline() {
 
               <div>
                 <h3 className="font-medium">Column Statistics</h3>
-                {Object.entries(dataProfile.columns).map(([col, stats]) => (
-                  <div key={col} className="mb-4 p-3 border rounded">
-                    <h4 className="font-medium">{col}</h4>
-                    <ul className="text-sm space-y-1">
-                      <li>Type: {stats.type}</li>
-                      <li>Missing: {stats.missing}</li>
-                      <li>Unique: {stats.unique}</li>
-                      {stats.stats.mean !== undefined && (
-                        <>
-                          <li>Mean: {stats.stats.mean.toFixed(2)}</li>
-                          {stats.stats.min !== undefined &&
-                            stats.stats.max !== undefined && (
-                              <li>
-                                Range: {stats.stats.min.toFixed(2)} -{" "}
-                                {stats.stats.max.toFixed(2)}
-                              </li>
-                            )}
-                        </>
+                {Object.entries(dataProfile.columns).map(
+                  ([colName, columnData]) => (
+                    <div key={colName} className="mb-4 p-3 border rounded">
+                      <h4 className="font-medium">{colName}</h4>
+                      <ul className="text-sm space-y-1">
+                        <li>Type: {columnData.type}</li>
+                        <li>Missing: {columnData.missing}</li>
+                        <li>Unique: {columnData.unique}</li>
+                        {columnData.stats.mean !== undefined && (
+                          <>
+                            <li>Mean: {columnData.stats.mean.toFixed(2)}</li>
+                            {columnData.stats.min !== undefined &&
+                              columnData.stats.max !== undefined && (
+                                <li>
+                                  Range: {columnData.stats.min.toFixed(2)} -{" "}
+                                  {columnData.stats.max.toFixed(2)}
+                                </li>
+                              )}
+                          </>
+                        )}
+                      </ul>
+
+                      {/* Distribution Chart */}
+                      {columnData.distribution && (
+                        <div className="mt-2">
+                          <h4 className="text-sm font-medium mb-1">
+                            Distribution
+                          </h4>
+                          <div className="h-48">
+                            <Bar
+                              data={createDistributionChartData(
+                                columnData.distribution
+                              )}
+                              options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                  y: {
+                                    beginAtZero: true,
+                                    title: {
+                                      display: true,
+                                      text: "Frequency",
+                                    },
+                                  },
+                                  x: {
+                                    title: {
+                                      display: true,
+                                      text: "Value Range",
+                                    },
+                                  },
+                                },
+                              }}
+                            />
+                          </div>
+                        </div>
                       )}
-                    </ul>
-                  </div>
-                ))}
+                    </div>
+                  )
+                )}
 
                 {/* Correlation Analysis Section */}
                 {dataProfile.correlation?.matrix && (
