@@ -28,9 +28,9 @@ type SidebarProps = {
 const Sidebar: FC<SidebarProps> = ({ children }) => {
   const [expanded, setExpanded] = useState(true);
   return (
-    <aside className="h-screen-dynamic min-h-screen">
+    <aside className="sticky top-0 h-screen overflow-y-auto flex-shrink-0">
       <nav className="h-full flex flex-col bg-gray-900 border-r shadow-sm text-white">
-        <div className="p-4 pb-2 flex justify-between items-center">
+        <div className="p-4 pb-2 flex justify-between items-center sticky top-0 bg-gray-900 z-10">
           <img
             src="https://img.logoipsum.com/243.svg"
             className={`overflow-hidden transition-all ${
