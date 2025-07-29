@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import List
 import pandas as pd
 import io
+import numpy as np
 
 class Fruit(BaseModel):
     name: str
@@ -121,11 +122,38 @@ def generate_data_profile(df: pd.DataFrame) -> dict:
                         }
                     } if pd.api.types.is_numeric_dtype(df[col]) else {}),
                     **({
+                        "value_counts": df[col].value_counts().head(10).to_dict(),
                         "top_values": df[col].value_counts().head(3).to_dict()
                     } if pd.api.types.is_string_dtype(df[col]) or 
                         pd.api.types.is_categorical_dtype(df[col]) else {})
                 },
-                "sample_values": df[col].dropna().head(3).tolist()
+                "sample_values": df[col].dropna().head(3).tolist(),
+                **({
+                    "distribution": {
+                        "bins": np.linspace(
+                            int(df[col].min()), 
+                            int(df[col].max()) + (0 if df[col].max().is_integer() else 1),
+                            10, 
+                            dtype=int
+                        ).tolist(),
+                        "counts": np.histogram(
+                            df[col].dropna(),
+                            bins=np.linspace(
+                                int(df[col].min()),
+                                int(df[col].max()) + (0 if df[col].max().is_integer() else 1),
+                                10,
+                                dtype=int
+                            )
+                        )[0].tolist()
+                    }
+                } if pd.api.types.is_numeric_dtype(df[col]) else {}),
+                **({
+                    "distribution": {
+                        "categories": df[col].value_counts().head(10).index.tolist(),
+                        "counts": df[col].value_counts().head(10).values.tolist()
+                    }
+                } if pd.api.types.is_string_dtype(df[col]) or 
+                    pd.api.types.is_categorical_dtype(df[col]) else {})
             } for col in df.columns
         },
         "correlation": {
