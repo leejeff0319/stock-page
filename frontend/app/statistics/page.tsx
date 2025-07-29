@@ -21,13 +21,23 @@ ChartJS.register(
   Legend
 );
 
+interface ModelInfo {
+  model_type: string;
+  accuracy?: number;
+  mse?: number;
+  r2?: number;
+  feature_importance?: Record<string, number>;
+  classification_report?: any;
+  is_classification?: boolean;
+}
+
 export default function AutoMLPipeline() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<string>("");
   const [columns, setColumns] = useState<string[]>([]);
   const [isTraining, setIsTraining] = useState(false);
   const [dataProfile, setDataProfile] = useState<DataProfile | null>(null);
-  const [bestModel, setBestModel] = useState<string | null>(null);
+  const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
 
   interface DataProfile {
@@ -76,6 +86,7 @@ export default function AutoMLPipeline() {
       setPreviewData([]);
       setColumns([]);
       setDataProfile(null);
+      setModelInfo(null);
     }
   };
 
@@ -108,18 +119,60 @@ export default function AutoMLPipeline() {
     }
   };
 
-  const handleTrainModel = () => {
-    setIsTraining(true);
-    // TODO: Implement actual model training logic
-    setTimeout(() => {
-      setBestModel("Random Forest Classifier (Accuracy: 92.5%)");
-      setIsTraining(false);
-    }, 2000);
-  };
+const handleTrainModel = async () => {
+  if (!selectedColumn) return;
 
-  const handleDownloadModel = () => {
-    // TODO: Implement model download logic
-    console.log("Downloading model...");
+  setIsTraining(true);
+  try {
+    const response = await fetch("http://localhost:8000/train-model", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        target_column: selectedColumn,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Training failed");
+    }
+
+    const result = await response.json();
+    setModelInfo({
+      ...result.model_info,
+      is_classification: result.is_classification
+    });
+    console.log("Training successful:", result);
+  } catch (error) {
+    console.error("Training error:", error);
+    setModelInfo(null);
+  } finally {
+    setIsTraining(false);
+  }
+};
+
+  const handleDownloadModel = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/download-model");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Download failed");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "trained_model.joblib";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Download error:", error);
+    }
   };
 
   const createDistributionChartData = (distribution: {
@@ -444,11 +497,72 @@ export default function AutoMLPipeline() {
       <div className="mb-6">
         <h2 className="text-lg font-medium mb-2">Best Model</h2>
         <div className="p-4 border border-gray-200 rounded-md min-h-20 bg-gray-50">
-          {bestModel ? (
-            <p className="text-sm">{bestModel}</p>
+          {modelInfo ? (
+            <div className="space-y-2">
+              <p className="text-sm">
+                <span className="font-medium">Model Type:</span>{" "}
+                {modelInfo.model_type}
+              </p>
+              {modelInfo.is_classification ? (
+                <>
+                  {modelInfo.accuracy !== undefined && (
+                    <p className="text-sm">
+                      <span className="font-medium">Accuracy:</span>{" "}
+                      {(modelInfo.accuracy * 100).toFixed(2)}%
+                    </p>
+                  )}
+                  {modelInfo.classification_report && (
+                    <div className="mt-2">
+                      <h4 className="font-medium text-sm">
+                        Classification Report:
+                      </h4>
+                      <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
+                        {JSON.stringify(
+                          modelInfo.classification_report,
+                          null,
+                          2
+                        )}
+                      </pre>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {modelInfo.mse !== undefined && (
+                    <p className="text-sm">
+                      <span className="font-medium">Mean Squared Error:</span>{" "}
+                      {modelInfo.mse.toFixed(4)}
+                    </p>
+                  )}
+                  {modelInfo.r2 !== undefined && (
+                    <p className="text-sm">
+                      <span className="font-medium">R-squared:</span>{" "}
+                      {modelInfo.r2.toFixed(4)}
+                    </p>
+                  )}
+                </>
+              )}
+              {modelInfo.feature_importance && (
+                <div className="mt-2">
+                  <h4 className="font-medium text-sm">Top Features:</h4>
+                  <ul className="text-sm space-y-1">
+                    {Object.entries(modelInfo.feature_importance)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 5)
+                      .map(([feature, importance]) => (
+                        <li key={feature}>
+                          {feature}: {(importance * 100).toFixed(2)}%
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           ) : (
             <p className="text-gray-500 italic">
-              The best model will appear here after training
+              {selectedColumn
+                ? "Train model to see results"
+                : "Select a target column first"}
             </p>
           )}
         </div>
@@ -456,7 +570,7 @@ export default function AutoMLPipeline() {
 
       <button
         onClick={handleDownloadModel}
-        disabled={!bestModel}
+        disabled={!modelInfo}
         className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
         Download Model

@@ -2,16 +2,44 @@ import uvicorn
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 import pandas as pd
 import io
 import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, mean_squared_error, classification_report, r2_score
+import joblib
+from pathlib import Path
+import tempfile
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
+from xgboost import XGBClassifier, XGBRegressor
+from fastapi.responses import FileResponse
 
 class Fruit(BaseModel):
     name: str
 
 class Fruits(BaseModel):
     fruits: List[Fruit]
+
+class TrainRequest(BaseModel):
+    target_column: str
+    test_size: float = 0.2
+    random_state: int = 42
+
+class ModelInfo(BaseModel):
+    model_type: str
+    accuracy: Optional[float] = None
+    mse: Optional[float] = None
+    r2: Optional[float] = None
+    feature_importance: Optional[dict] = None
+    classification_report: Optional[dict] = None
+    is_classification: Optional[bool] = None
 
 app = FastAPI()
 
@@ -28,6 +56,8 @@ app.add_middleware(
 )
 
 memory_db = {"fruits": []}
+current_model = None
+current_model_info = None
 
 @app.get("/fruits", response_model=Fruits)
 def get_fruits():
@@ -54,16 +84,12 @@ async def upload_dataset(file: UploadFile = File(...)):
 
         # Drop rows with any NaN values (keep complete cases only)
         df_clean = df.replace(missing_values, pd.NA).dropna()
-
+        
+        # Store the cleaned dataset in memory
+        app.current_dataset = df_clean
+        
         # Generate profile
         profile = generate_data_profile(df_clean)
-        
-        print("\n=== Original Shape ===")
-        print(df.shape)
-        print("\n=== Cleaned Shape ===")
-        print(df_clean.shape)
-        print("\n=== Sample Data ===")
-        print(df_clean.head())
         
         return {
             "message": "Dataset uploaded successfully",
@@ -76,6 +102,187 @@ async def upload_dataset(file: UploadFile = File(...)):
             "profile": profile
         }
     
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/train-model")
+async def train_model(request: TrainRequest):
+    global current_model, current_model_info
+    
+    try:
+        if not hasattr(app, 'current_dataset'):
+            raise HTTPException(status_code=400, detail="No dataset uploaded. Please upload a dataset first.")
+        
+        df = app.current_dataset
+        target_column = request.target_column
+        
+        if target_column not in df.columns:
+            raise HTTPException(status_code=400, detail=f"Target column '{target_column}' not found in dataset.")
+        
+        # Prepare features and target
+        X = df.drop(columns=[target_column])
+        y = df[target_column]
+
+        print("\n=== DATA DIAGNOSTICS ===")
+        print("Target column sample values:", y.head().tolist())
+        print("Target unique values:", y.nunique())
+        print("Features dtypes:\n", X.dtypes)
+        print("Missing values in features:\n", X.isna().sum())
+        print("=======================\n")
+        
+        # Determine if classification or regression
+        is_classification = (
+            pd.api.types.is_categorical_dtype(y) or 
+            pd.api.types.is_object_dtype(y) or 
+            y.nunique() < 10
+        )
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, 
+            test_size=request.test_size, 
+            random_state=request.random_state,
+            stratify=y if is_classification else None
+        )
+        
+        # Preprocessing pipeline (same as before)
+        numeric_features = X.select_dtypes(include=['number']).columns.tolist()
+        categorical_features = X.select_dtypes(include=['object', 'category']).columns.tolist()
+        
+        numeric_transformer = Pipeline(steps=[('scaler', StandardScaler())])
+        categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder(handle_unknown='ignore'))])
+        
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', numeric_transformer, numeric_features),
+                ('cat', categorical_transformer, categorical_features)
+            ])
+        
+        # Define models to test
+        if is_classification:
+            models = {
+                "RandomForest": RandomForestClassifier(random_state=42),
+                "LogisticRegression": LogisticRegression(max_iter=1000),
+                "XGBoost": XGBClassifier(random_state=42),
+                "SVM": SVC(probability=True, random_state=42),
+                "GradientBoosting": GradientBoostingClassifier(random_state=42)
+            }
+            
+        else:
+            models = {
+                "RandomForest": RandomForestRegressor(random_state=42),
+                "XGBoost": XGBRegressor(random_state=42),
+                "GradientBoosting": GradientBoostingRegressor(random_state=42)
+            }
+        
+        # Train and evaluate each model
+        results = {}
+        best_score = -float('inf') if is_classification else float('inf')
+        best_model = None
+        best_model_name = ""
+        
+        for name, model in models.items():
+            try:
+                pipeline = Pipeline([
+                    ('preprocessor', preprocessor),
+                    ('model', model)
+                ])
+                
+                pipeline.fit(X_train, y_train)
+                y_pred = pipeline.predict(X_test)
+                
+                if is_classification:
+                    score = accuracy_score(y_test, y_pred)
+                    print(f"{name} - Accuracy: {score:.4f}")
+                    # Higher accuracy is better
+                    if score > best_score:
+                        best_score = score
+                        best_model = pipeline
+                        best_model_name = name
+                else:
+                    score = mean_squared_error(y_test, y_pred)
+                    print(f"{name} - MSE: {score:.4f}")
+                    # Lower MSE is better
+                    if score < best_score:
+                        best_score = score
+                        best_model = pipeline
+                        best_model_name = name
+                
+                results[name] = score
+            except Exception as e:
+                print(f"Error training {name}: {str(e)}")
+                continue
+        
+        print(f"\n=== TRAINING RESULTS ===")
+        print(f"Best model: {best_model_name}")
+        print(f"Best score: {best_score}")
+        print(f"All results: {results}")
+        print("=======================\n")
+
+        # Evaluate best model
+        if best_model is None:
+            raise HTTPException(status_code=500, detail="No model could be trained successfully.")
+        
+        y_pred = best_model.predict(X_test)
+        
+        # Prepare model info
+        model_info = {
+            "model_type": best_model_name,
+            "is_classification": is_classification
+        }
+        
+        if is_classification:
+            model_info["accuracy"] = accuracy_score(y_test, y_pred)
+            model_info["classification_report"] = classification_report(y_test, y_pred, output_dict=True)
+        else:
+            model_info["mse"] = mean_squared_error(y_test, y_pred)
+            model_info["r2"] = r2_score(y_test, y_pred)
+        
+        # Get feature importance (if available)
+        if hasattr(best_model.named_steps['model'], 'feature_importances_'):
+            feature_importances = best_model.named_steps['model'].feature_importances_
+            
+            # Get feature names after preprocessing
+            if len(categorical_features) > 0:
+                ohe = best_model.named_steps['preprocessor'].named_transformers_['cat'].named_steps['onehot']
+                cat_feature_names = ohe.get_feature_names_out(categorical_features)
+                all_feature_names = numeric_features + list(cat_feature_names)
+            else:
+                all_feature_names = numeric_features
+            
+            model_info["feature_importance"] = dict(zip(all_feature_names, feature_importances))
+        
+        current_model = best_model
+        current_model_info = ModelInfo(**model_info)
+        
+        return {
+            "message": f"Model training complete. Best model: {best_model_name}",
+            "model_info": model_info,
+            "all_model_results": results,
+            "is_classification": is_classification
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/download-model")
+async def download_model():
+    global current_model
+    
+    if current_model is None:
+        raise HTTPException(status_code=404, detail="No trained model available")
+    
+    try:
+        # Save model to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            joblib.dump(current_model, tmp.name)
+            
+            # Return the file
+            return FileResponse(
+                tmp.name,
+                media_type='application/octet-stream',
+                filename="trained_model.joblib"
+            )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -163,6 +370,6 @@ def generate_data_profile(df: pd.DataFrame) -> dict:
         }
     }
     return profile
-    
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
