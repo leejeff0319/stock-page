@@ -143,10 +143,13 @@ export default function AutoMLPipeline() {
       };
     }
 
-    // For numeric data
-    const labels = distribution.bins?.slice(0, -1).map((bin, i) => {
-      return `${bin.toFixed(2)}-${distribution.bins![i + 1].toFixed(2)}`;
-    }) || [];
+    // For numeric data with integer bins
+    const labels =
+      distribution.bins?.slice(0, -1).map((bin, i) => {
+        const nextBin = distribution.bins![i + 1];
+        // Format as integer ranges without .00
+        return `${bin}-${nextBin}`;
+      }) || [];
 
     return {
       labels,
@@ -190,43 +193,46 @@ export default function AutoMLPipeline() {
       </div>
 
       {/* Preview Data Table */}
-      {previewData && previewData.length > 0 && columns && columns.length > 0 && (
-        <div className="mb-6 border rounded-lg overflow-hidden">
-          <h3 className="bg-gray-100 p-2 font-medium">
-            Dataset Preview (First 5 Rows)
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  {columns.map((col) => (
-                    <th
-                      key={col}
-                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {previewData.map((row, i) => (
-                  <tr key={i}>
+      {previewData &&
+        previewData.length > 0 &&
+        columns &&
+        columns.length > 0 && (
+          <div className="mb-6 border rounded-lg overflow-hidden">
+            <h3 className="bg-gray-100 p-2 font-medium">
+              Dataset Preview (First 5 Rows)
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
                     {columns.map((col) => (
-                      <td
-                        key={`${i}-${col}`}
-                        className="px-4 py-2 whitespace-nowrap text-sm text-gray-500"
+                      <th
+                        key={col}
+                        className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
-                        {row[col]?.toString()}
-                      </td>
+                        {col}
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {previewData.map((row, i) => (
+                    <tr key={i}>
+                      {columns.map((col) => (
+                        <td
+                          key={`${i}-${col}`}
+                          className="px-4 py-2 whitespace-nowrap text-sm text-gray-500"
+                        >
+                          {row[col]?.toString()}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       <button
         onClick={handleUpload}
@@ -310,8 +316,12 @@ export default function AutoMLPipeline() {
                                     },
                                     ticks: {
                                       autoSkip: false,
-                                      maxRotation: columnData.stats.value_counts ? 45 : 0,
-                                      minRotation: columnData.stats.value_counts ? 45 : 0,
+                                      maxRotation: columnData.stats.value_counts
+                                        ? 45
+                                        : 0,
+                                      minRotation: columnData.stats.value_counts
+                                        ? 45
+                                        : 0,
                                     },
                                   },
                                 },
