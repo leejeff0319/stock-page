@@ -42,3 +42,7 @@ next-env.d.ts
 
 # Virtual environment
 venv
+
+# Ignore logs and cache
+logs/
+__pycache__/

@@ -5,7 +5,7 @@ from lumibot.traders import Trader
 from datetime import datetime
 from alpaca_trade_api import REST
 from timedelta import Timedelta
-from finbert_utils import estimate_sentiment
+from .finbert_utils import estimate_sentiment 
 import os
 from dotenv import load_dotenv
 
@@ -80,11 +80,14 @@ class MLTrader(Strategy):
                 )
                 self.submit_order(order) 
                 self.last_trade = "sell"
+        
+        print(f"Cash: {cash}, Last Price: {last_price}, Quantity: {quantity}")
+        print(f"Sentiment: {sentiment}, Probability: {probability}")
 
                 
                 
         
-
+"""
 start_date = datetime(2020,1,1)
 end_date = datetime(2023,12,31) 
 
@@ -97,3 +100,4 @@ strategy.backtest(
     end_date,
     parameters={"symbol":"SPY", "cash_at_risk":.5}
 )
+"""
