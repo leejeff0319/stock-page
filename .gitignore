@@ -1,0 +1,12 @@
+# Python
+server/venv/
+__pycache__/
+
+# Node.js
+frontend/node_modules/
+frontend/.next/
+
+# Large files
+*.dll
+*.lib
+*.node
