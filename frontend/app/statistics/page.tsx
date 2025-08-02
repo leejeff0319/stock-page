@@ -230,6 +230,7 @@ const handleTrainModel = async () => {
           id="dataset-upload"
           type="file"
           accept=".csv"
+
           onChange={handleFileChange}
           className="block w-full text-sm text-gray-500
             file:mr-4 file:py-2 file:px-4
@@ -239,6 +240,7 @@ const handleTrainModel = async () => {
             hover:file:bg-blue-100"
         />
         {selectedFile && (
+
           <p className="mt-2 text-sm text-gray-600">
             Selected file: {selectedFile.name}
           </p>
@@ -286,6 +288,7 @@ const handleTrainModel = async () => {
             </div>
           </div>
         )}
+
 
       <button
         onClick={handleUpload}
@@ -571,6 +574,7 @@ const handleTrainModel = async () => {
       <button
         onClick={handleDownloadModel}
         disabled={!modelInfo}
+
         className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
         Download Model
