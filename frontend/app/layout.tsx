@@ -12,6 +12,7 @@ import {
   BarChart3,
   LayoutDashboard,
   Settings,
+  LogIn,
 } from "lucide-react";
 
 const geistSans = Geist({
@@ -57,6 +58,7 @@ export default function RootLayout({
           <SidebarItem icon={<Receipt size={20} />} text="Billings" href="/billings" />
           <hr className="my-3" />
           <SidebarItem icon={<Settings size={20} />} text="Settings" href="/settings" />
+          <SidebarItem icon={<LogIn size={20} />} text="Log In" href="/log-in" />
           <SidebarItem icon={<UserCircle size={20} />} text="User" href="/user" />
         </Sidebar>
         <main className="flex-1">{children}</main>

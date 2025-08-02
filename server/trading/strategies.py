@@ -80,6 +80,7 @@ class MLTrader(Strategy):
                 )
                 self.submit_order(order) 
                 self.last_trade = "sell"
+
         
         print(f"Cash: {cash}, Last Price: {last_price}, Quantity: {quantity}")
         print(f"Sentiment: {sentiment}, Probability: {probability}")
@@ -87,7 +88,7 @@ class MLTrader(Strategy):
                 
                 
         
-"""
+""" 
 start_date = datetime(2020,1,1)
 end_date = datetime(2023,12,31) 
 
@@ -101,3 +102,5 @@ strategy.backtest(
     parameters={"symbol":"SPY", "cash_at_risk":.5}
 )
 """
+
+
