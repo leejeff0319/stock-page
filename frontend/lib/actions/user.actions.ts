@@ -116,17 +116,9 @@ export async function getCurrentUser() {
     return null;
   }
 
-  // Get additional user data from the users table if needed
-  const { data: userData, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-
-  if (error) {
-    console.error('Error fetching user data:', error);
-    return { ...user, metadata: user.user_metadata };
-  }
-
-  return { ...user, ...userData };
+  return { 
+    ...user, 
+    firstName: user.user_metadata.first_name, 
+    lastName: user.user_metadata.last_name 
+  };
 }
