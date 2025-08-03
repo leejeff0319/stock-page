@@ -26,25 +26,25 @@ const PlaidLink = ({ user, variant = "primary" }: PlaidLinkProps) => {
   useEffect(() => {
     const getLinkToken = async () => {
       try {
-        const response = await fetch("/api/plaid/create_link_token", {
-          method: "POST",
+        const response = await fetch('/api/plaid/create_link_token', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ user_id: user.id }),
+          body: JSON.stringify({ user_id: user.id }), // Make sure user.id exists
         });
-
+        
         if (!response.ok) {
-          throw new Error("Failed to create link token");
+          throw new Error('Failed to create link token');
         }
-
+        
         const data = await response.json();
         setToken(data.link_token);
       } catch (error) {
-        console.error("Error creating link token:", error);
+        console.error('Error:', error);
       }
     };
-
+  
     getLinkToken();
   }, [user.id]);
 
