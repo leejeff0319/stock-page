@@ -1,32 +1,10 @@
 "use client";
 
-import { createSwapy } from "swapy";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import DashboardCard from "@/components/DashboardCard";
-
-interface SwapyInstance {
-  onSwap: (handler: (event: any) => void) => void;
-  destroy: () => void;
-}
+import { getCurrentUser } from "@/lib/actions/user.actions";
 
 export default function Home() {
-  const swapy = useRef<SwapyInstance | null>(null);
-  const container = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (container.current) {
-      swapy.current = createSwapy(container.current);
-
-      swapy.current.onSwap((event: { from: string; to: string }) => {
-        console.log("swap", event);
-      });
-    }
-
-    return () => {
-      swapy.current?.destroy();
-    };
-  }, []);
-
   const widgets = [
     {
       id: "a",
@@ -65,26 +43,33 @@ export default function Home() {
     }
   ];
 
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    }
+    fetchUser();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col gap-6 p-6">
         <h1 className="text-2xl font-semibold text-gray-800">
-          Good morning, <span className="font-bold">User</span>
+          Good morning, <span className="font-bold">{user?.firstName || 'User'}</span>
         </h1>
       </div>
 
       <div
-        ref={container}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6"
       >
         {widgets.map((widget) => (
           <div 
             key={widget.id} 
-            data-swapy-slot={widget.id}
-            className="min-h-[200px] cursor-grab active:cursor-grabbing"
+            className="min-h-[200px]"
           >
             <div 
-              data-swapy-item={widget.id}
               className="h-full"
             >
               <DashboardCard
