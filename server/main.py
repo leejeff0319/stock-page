@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -7,6 +7,7 @@ from mlPipeline import MLPipeline
 from trading.service import TradingService
 from plaid_client import client
 from pydantic import BaseModel
+from datetime import datetime, timedelta
 
 class Fruit(BaseModel):
     name: str
@@ -106,19 +107,31 @@ class LinkTokenRequest(BaseModel):
 
 # Plaid Endpoints
 @app.post("/api/plaid/create_link_token")
-async def create_link_token(request: LinkTokenRequest):
+async def create_link_token(request: Request):
     try:
-        response = client.link_token_create(
-            LinkTokenCreateRequest(
-                user=LinkTokenCreateRequestUser(client_user_id=request.user_id),
-                client_name="Your App",
-                products=["transactions"],
-                country_codes=["US"],
-                language="en",
-            )
-        )
-        return {"link_token": response.link_token}
+        # Get user ID from request or use a default
+        user_id = (await request.json()).get('user_id', 'default_user')
+        
+        # Set date range for transactions (last 30 days)
+        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        
+        response = client.link_token_create({
+            'user': {
+                'client_user_id': user_id
+            },
+            'client_name': "Your App Name",
+            'products': ["transactions"],
+            'country_codes': ["US"],
+            'language': "en",
+            'transactions': {
+                'days_requested': 30
+            }
+        })
+        
+        return {"link_token": response['link_token']}
     except Exception as e:
+        print(f"Error creating link token: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/plaid/exchange_public_token")
