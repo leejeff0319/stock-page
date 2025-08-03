@@ -58,6 +58,7 @@ const Sidebar: FC<SidebarProps> = ({ children }) => {
             alt=""
             className="w-10 h-10 roudned-md"
           />
+          
           <div
             className={`
                     flex justify-between items-center

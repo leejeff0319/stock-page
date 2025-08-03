@@ -1,10 +1,13 @@
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from mlPipeline import MLPipeline
 from trading.service import TradingService
+from plaid_client import client
+from pydantic import BaseModel
+from datetime import datetime, timedelta
 
 class Fruit(BaseModel):
     name: str
@@ -98,7 +101,62 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "message": "Trading API is running"}
 
+# Plaid Implementation
+class LinkTokenRequest(BaseModel):
+    user_id: str  # Optional, if you need user-specific tokens
 
+# Plaid Endpoints
+@app.post("/api/plaid/create_link_token")
+async def create_link_token(request: Request):
+    try:
+        # Get user ID from request or use a default
+        user_id = (await request.json()).get('user_id', 'default_user')
+        
+        # Set date range for transactions (last 30 days)
+        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        
+        response = client.link_token_create({
+            'user': {
+                'client_user_id': user_id
+            },
+            'client_name': "Your App Name",
+            'products': ["transactions"],
+            'country_codes': ["US"],
+            'language': "en",
+            'transactions': {
+                'days_requested': 30
+            }
+        })
+        
+        return {"link_token": response['link_token']}
+    except Exception as e:
+        print(f"Error creating link token: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/plaid/exchange_public_token")
+async def exchange_public_token(public_token: str):
+    try:
+        response = client.item_public_token_exchange(
+            ItemPublicTokenExchangeRequest(public_token=public_token)
+        )
+        return {"access_token": response.access_token}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/plaid/transactions")
+async def get_transactions(access_token: str):
+    try:
+        response = client.transactions_get(
+            TransactionsGetRequest(
+                access_token=access_token,
+                start_date="2020-01-01",  # Adjust as needed
+                end_date="2025-12-31",
+            )
+        )
+        return response.to_dict()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/upload-dataset")
 async def upload_dataset(file: UploadFile = File(...)):

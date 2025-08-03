@@ -3,7 +3,7 @@ import React from "react";
 interface DashboardCardProps {
   title: string;
   subtitle?: string;
-  content?: string;
+  content?: React.ReactNode;  // Changed from string to React.ReactNode
   chartPlaceholder?: boolean;
   calendarPlaceholder?: boolean;
 }
@@ -29,7 +29,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
           Calendar Placeholder
         </div>
       )}
-      {content && <p className="mt-4 text-sm text-gray-600">{content}</p>}
+      {content && <div className="mt-4">{content}</div>} {/* Changed from <p> to <div> */}
     </div>
   );
 };

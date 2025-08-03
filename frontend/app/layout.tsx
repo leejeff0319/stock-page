@@ -53,7 +53,7 @@ export default function RootLayout({
             href="/statistics"
           />
           <SidebarItem icon={<LifeBuoy size={20} />} text="Stocks" href="/stocks" />
-          <SidebarItem icon={<Boxes size={20} />} text="Portfolio" href="/portfolio" />
+          <SidebarItem icon={<Boxes size={20} />} text="Banking" href="/banking" />
           <SidebarItem icon={<Package size={20} />} text="Backtest" href="/backtest" />
           <SidebarItem icon={<Receipt size={20} />} text="Billings" href="/billings" />
           <hr className="my-3" />
