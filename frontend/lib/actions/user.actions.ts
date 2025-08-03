@@ -24,9 +24,12 @@ export type LoginData = {
 };
 
 export async function signUp(userData: SignUpData) {
+  console.log('Sign-up data received on server:', userData);
   const supabase = createClient();
   
   try {
+    const formattedDob = userData.dob ? new Date(userData.dob).toISOString() : null;
+    
     const { data, error } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
@@ -37,20 +40,38 @@ export async function signUp(userData: SignUpData) {
           address: userData.address,
           city: userData.city,
           state: userData.state,
-          postal_code: userData.postalCode,
-          dob: userData.dob,
+          postal_code: userData.postalCode, // Note: using underscore
+          dob: formattedDob,
         },
         emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
       },
     });
 
+    console.log('SignUp response:', { data, error });
+    
     if (error) {
+      console.error('Sign up error details:', {
+        message: error.message,
+        status: error.status,
+        cause: error.cause
+      });
       throw error;
+    }
+
+    // Immediately check if public record was created
+    if (data.user?.id) {
+      const { data: publicUser, error: publicError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+      
+      console.log('Public user record check:', { publicUser, publicError });
     }
 
     return data;
   } catch (error) {
-    console.error('Sign up error:', error);
+    console.error('Complete sign up error:', error);
     throw error;
   }
 }
