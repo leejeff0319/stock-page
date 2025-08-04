@@ -1,7 +1,10 @@
-# All-in-One Website
+# All-in-One Financial App
 
 ## Goals
+We’ve all been there. Checking our bank account, only to freeze in disbelief at the balance. "There’s no way I spent that much!" But then comes the slow, sinking realization as we scroll through the transactions: every coffee, every impulse buy, every "It’s just a few dollars" adds up. And just like that, another paycheck slips through our fingers, pushing us further from the financial stability we’re working so hard to reach. This app will not only help us cut down on our spending, but it will also help us make better choices.
 
+We developed our app to alert users about how much impact their spending habits have on their financial state. The app has a banking page that shows users the current balance of their bank account and recent purchases. The backtest page will allow users
+to test out their trading strategies to find the best one. If users want to do their own research in hopes of cracking the code, the statistics page allows users to insert their own dataset to build a machine learning model.
 
 ## Authentication
 
