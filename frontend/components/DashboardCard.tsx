@@ -1,37 +1,60 @@
-import React from "react";
+import React from 'react';
 
-interface DashboardCardProps {
-  title: string;
-  subtitle?: string;
-  content?: React.ReactNode;  // Changed from string to React.ReactNode
-  chartPlaceholder?: boolean;
-  calendarPlaceholder?: boolean;
-}
-
-const DashboardCard: React.FC<DashboardCardProps> = ({
+export default function DashboardCard({
   title,
   subtitle,
   content,
   chartPlaceholder,
   calendarPlaceholder,
-}) => {
+  children
+}: {
+  title: string;
+  subtitle?: string;
+  content?: string;
+  chartPlaceholder?: boolean;
+  calendarPlaceholder?: boolean;
+  children?: React.ReactNode;
+}) {
+  // Simple fallback icons using text symbols
+  const renderIcon = () => {
+    if (title.includes('Value')) return <span className="text-blue-500 text-xl">$</span>;
+    if (title.includes('Investments')) return <span className="text-green-500 text-xl">↑</span>;
+    if (title.includes('Balance')) return <span className="text-purple-500 text-xl">¢</span>;
+    if (title.includes('Spend')) return <span className="text-red-500 text-xl">↓</span>;
+    return null;
+  };
+
   return (
-    <div className="rounded-2xl bg-white shadow-md p-4 hover:shadow-lg transition">
-      <h2 className="text-lg font-semibold text-gray-700">{title}</h2>
-      {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
-      {chartPlaceholder && (
-        <div className="bg-purple-100 h-24 rounded-lg mt-4 flex items-center justify-center text-purple-500 text-sm">
-          Chart Placeholder
+    <div className="bg-white rounded-lg shadow p-4 h-full flex flex-col">
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-lg font-semibold">{title}</h2>
+          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+        </div>
+        {renderIcon()}
+      </div>
+
+      {children ? (
+        <div className="flex-1 mt-2">
+          {children}
+        </div>
+      ) : (
+        <div className="mt-4 flex-1">
+          {content && <p className="whitespace-pre-line">{content}</p>}
+          
+          {chartPlaceholder && (
+            <div className="mt-4 h-40 bg-gray-100 rounded flex items-center justify-center">
+              <p className="text-gray-400">Chart Placeholder</p>
+            </div>
+          )}
+          
+          {calendarPlaceholder && (
+            <div className="mt-4 h-40 bg-gray-100 rounded flex items-center justify-center">
+              <p className="text-gray-400">Calendar Placeholder</p>
+            </div>
+          )}
         </div>
       )}
-      {calendarPlaceholder && (
-        <div className="bg-blue-100 h-24 rounded-lg mt-4 flex items-center justify-center text-blue-500 text-sm">
-          Calendar Placeholder
-        </div>
-      )}
-      {content && <div className="mt-4">{content}</div>} {/* Changed from <p> to <div> */}
     </div>
   );
-};
-
-export default DashboardCard;
+}

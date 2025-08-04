@@ -1,8 +1,10 @@
 "use client";
 
 import { createSwapy } from "swapy";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import DashboardCard from "@/components/DashboardCard";
+import TransactionsCard from "@/components/TransactionsCard"; 
+import NetWorthCard from "@/components/NetWorthCard"; 
 
 interface SwapyInstance {
   onSwap: (handler: (event: any) => void) => void;
@@ -12,6 +14,7 @@ interface SwapyInstance {
 export default function Home() {
   const swapy = useRef<SwapyInstance | null>(null);
   const container = useRef<HTMLDivElement | null>(null);
+  const [showFinancialCards, setShowFinancialCards] = useState(false);
 
   useEffect(() => {
     if (container.current) {
@@ -50,8 +53,8 @@ export default function Home() {
     },
     {
       id: "d",
-      title: "Location",
-      content: "Statistics\nStocks\nPortable\nEndload\nBiltinger\nSettings\nUser"
+      title: "Net Worth", // Replaced Location with Net Worth
+      component: <NetWorthCard /> // Using the new component
     },
     {
       id: "e",
@@ -60,8 +63,8 @@ export default function Home() {
     },
     {
       id: "f",
-      title: "Recent Activity",
-      content: "5 new notifications\n3 pending requests"
+      title: "Recent Transactions", // Replaced Recent Activity
+      component: <TransactionsCard /> // Using the new component
     }
   ];
 
@@ -71,8 +74,25 @@ export default function Home() {
         <h1 className="text-2xl font-semibold text-gray-800">
           Good morning, <span className="font-bold">User</span>
         </h1>
+        
+        {/* Toggle for financial cards - optional */}
+        <button 
+          onClick={() => setShowFinancialCards(!showFinancialCards)}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md w-fit"
+        >
+          {showFinancialCards ? 'Hide Financial Overview' : 'Show Financial Overview'}
+        </button>
       </div>
 
+      {/* Financial Overview Section - Optional */}
+      {showFinancialCards && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 pb-6">
+          <NetWorthCard />
+          <TransactionsCard />
+        </div>
+      )}
+
+      {/* Main Swapy Grid */}
       <div
         ref={container}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6"
@@ -87,13 +107,17 @@ export default function Home() {
               data-swapy-item={widget.id}
               className="h-full"
             >
-              <DashboardCard
-                title={widget.title}
-                subtitle={widget.subtitle}
-                content={widget.content}
-                chartPlaceholder={widget.chartPlaceholder}
-                calendarPlaceholder={widget.calendarPlaceholder}
-              />
+              {widget.component ? (
+                widget.component
+              ) : (
+                <DashboardCard
+                  title={widget.title}
+                  subtitle={widget.subtitle}
+                  content={widget.content}
+                  chartPlaceholder={widget.chartPlaceholder}
+                  calendarPlaceholder={widget.calendarPlaceholder}
+                />
+              )}
             </div>
           </div>
         ))}
