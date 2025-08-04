@@ -15,7 +15,8 @@ We built user authentication through Supabase. Features of the website will be i
 
 ## Dashboard
 
-<img width="1916" height="562" alt="Image" src="https://github.com/user-attachments/assets/e2c2d70a-c7d8-49d7-8c8b-b0d3ad9126c6" />
+<img width="2240" height="971" alt="Dashboard" src="https://github.com/user-attachments/assets/b98e05d5-a741-4f13-a5cb-2dfa27c77170" />
+
 
 ## Statistics
 
@@ -44,3 +45,31 @@ The user can then select a column to train the model to predict in a dropdown me
 
 Categorical data will be trained through Random Forest, Logistic Regression, XGBoost, SVM, and Gradient Boosting methods, while continuous data is trained through Random Forest, XGBoost, and Gradient Boosting methods. Out of the trained models, a model with the highest 
 accuracy will be presented for categorical data, while a model with the lowest MSE (Mean Squared Error) is presented for continuous data. Finally, the users can download the trained model by clicking on the "Download Model" button.
+
+## Banking
+
+User can connect their bank accounts using Plaid API. Simply click on the "Connect Bank" button in the middle of the page.
+<img width="450" height="510" alt="Banking Page" src="https://github.com/user-attachments/assets/a24f2b3b-847a-4091-b0ed-075d8fe70851" />
+
+Then follow the prompts shown on the popup by Plaid to get connected.
+
+<img width="450" height="500" alt="ConnectBank4" src="https://github.com/user-attachments/assets/07e6537a-4ae5-46d5-916f-67842edef1a5" />
+<img width="450" height="500" alt="ConnectBank3" src="https://github.com/user-attachments/assets/770f0ec8-c130-445d-86d0-c80358871442" />
+<img width="450" height="500" alt="ConnectBank2" src="https://github.com/user-attachments/assets/2d659a74-55d9-4786-a79c-45186de341e5" />
+<img width="450" height="500" alt="ConnectBank" src="https://github.com/user-attachments/assets/3821eaaa-7867-40cb-a5a4-b6e348e943e2" />
+
+Page shows a summary of User's bank accounts, including total Net Worth and Recent Transactions of all bank accounts combined. 
+
+<img width="900" height="450" alt="ConnectBank5" src="https://github.com/user-attachments/assets/2925f308-d784-473b-9e18-5a14ca6d58af" />
+
+Here is an image of all of the Plaid logs from this interaction.
+
+<img width="500" height="500" alt="PlaidLogs" src="https://github.com/user-attachments/assets/8d2c7cdc-e2bb-4f7b-bb58-fc74fd194a97" />
+
+## Backtest
+
+User can use this page to perform a simple backtest for a stock trading strategy. Alpaca Trading API is used, purchase/sell are decided by results of a Sentiment Analysis of Yahoo Finance News articles. FinBERT gives a result of whether each day had an overall positive sentiment of negative sentiment on the SPY stock. Then, based on the risk chosen by the user, trade is executed. Results pop up on a separate web browser tab as shown below. 
+
+<img width="942" height="479" alt="Backtest" src="https://github.com/user-attachments/assets/4dbcdc6a-dd68-4b6f-96f8-fad930b2a291" />
+
+<img width="2513" height="1196" alt="BacktestResult" src="https://github.com/user-attachments/assets/1fce9fae-67c6-41ea-844f-722444ed2071" />
