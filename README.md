@@ -15,8 +15,7 @@ We built user authentication through Supabase. Features of the website will be i
 
 ## Dashboard
 
-<img width="2240" height="971" alt="Dashboard" src="https://github.com/user-attachments/assets/b98e05d5-a741-4f13-a5cb-2dfa27c77170" />
-
+<img width="2240" height="971" alt="Dashboard" src="https://github.com/user-attachments/assets/9f387f71-a93c-464e-8e21-0b7010fc0808" />
 
 ## Statistics
 
