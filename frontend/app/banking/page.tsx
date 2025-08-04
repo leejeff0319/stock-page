@@ -1,9 +1,11 @@
 'use client';
 
 import PlaidLink from '@/components/PlaidLink';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function PortfolioPage() {
+  const router = useRouter();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
 
@@ -22,6 +24,23 @@ export default function PortfolioPage() {
       console.error('Error fetching transactions:', error);
     }
   };
+  
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/auth/check", {
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          // Redirect to login if not authenticated
+          router.push("/login");
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

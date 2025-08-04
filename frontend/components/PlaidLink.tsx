@@ -15,111 +15,154 @@ interface PlaidLinkProps {
     email?: string;
   };
   variant?: "primary" | "ghost" | "default";
-  children?: React.ReactNode;
   className?: string;
+}
+
+interface TokenResponse {
+  link_token: string;
+}
+
+interface ExchangeResponse {
+  access_token: string;
 }
 
 const PlaidLink = ({ user, variant = "primary" }: PlaidLinkProps) => {
   const router = useRouter();
   const [token, setToken] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const getLinkToken = async () => {
-      try {
-        const response = await fetch('/api/plaid/create_link_token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ user_id: user.id }), // Make sure user.id exists
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to create link token');
+  const getLinkToken = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        "http://localhost:8000/api/plaid/create_link_token",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user.id }),
         }
-        
-        const data = await response.json();
-        setToken(data.link_token);
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    };
-  
-    getLinkToken();
+      );
+
+      if (!response.ok) throw new Error("Failed to create link token");
+
+      const data: TokenResponse = await response.json();
+      setToken(data.link_token);
+      setError(null);
+    } catch (err) {
+      console.error("Error:", err);
+      setError("Failed to connect to Plaid. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }, [user.id]);
 
+  useEffect(() => {
+    if (!token) getLinkToken();
+  }, [token, getLinkToken]);
+
   const onSuccess = useCallback<PlaidLinkOnSuccess>(
-    async (public_token: string) => {
+    async (public_token, metadata) => {
       try {
-        const response = await fetch("/api/plaid/exchange_public_token", {
+        setLoading(true);
+        setError(null);
+        
+        // 1. Exchange public token
+        const exchangeResponse = await fetch("http://localhost:8000/api/plaid/exchange_public_token", {
           method: "POST",
-          headers: {
+          headers: { 
             "Content-Type": "application/json",
+            "Accept": "application/json"
           },
-          body: JSON.stringify({ public_token }),
+          body: JSON.stringify({ 
+            public_token,
+            institution_id: metadata.institution?.institution_id,
+            user_id: user.id
+          }),
+          credentials: 'include'  // Important for cookies
         });
 
-        if (!response.ok) {
-          throw new Error("Failed to exchange public token");
+        if (!exchangeResponse.ok) {
+          throw new Error("Failed to exchange token");
         }
 
-        // You might want to store the access token in your database here
-        const { access_token } = await response.json();
-
-        // Optionally: Send access_token to your backend to associate with user
-        await fetch("/api/plaid/store_access_token", {
+        const { access_token, item_id } = await exchangeResponse.json();
+        
+        // 2. Store access token
+        const storeResponse = await fetch("http://localhost:8000/api/plaid/store_access_token", {
           method: "POST",
-          headers: {
+          headers: { 
             "Content-Type": "application/json",
+            "Accept": "application/json"
           },
           body: JSON.stringify({
             user_id: user.id,
             access_token,
+            item_id,
+            institution_id: metadata.institution?.institution_id,
           }),
+          credentials: 'include'  // Important for cookies
         });
 
-        router.push("/dashboard");
-      } catch (error) {
-        console.error("Error exchanging public token:", error);
+        if (!storeResponse.ok) {
+          throw new Error("Failed to store access token");
+        }
+
+        // 3. Verify authentication before redirect
+        const authCheck = await fetch("http://localhost:8000/api/auth/check", {
+          credentials: 'include'
+        });
+        
+        if (authCheck.ok) {
+          router.push("/dashboard");
+        } else {
+          throw new Error("Authentication failed after connection");
+        }
+      } catch (err) {
+        console.error("Bank connection failed:", err);
+        setError(
+          err instanceof Error ? 
+          err.message : 
+          "Failed to complete bank connection"
+        );
+      } finally {
+        setLoading(false);
       }
     },
     [user.id, router]
-  );
-
+);
   const config: PlaidLinkOptions = {
     token,
     onSuccess,
-    // Optional: Add other Plaid Link configuration options
     onExit: (err, metadata) => {
       console.log("Plaid Link exit:", err, metadata);
+      if (err) setError("Connection cancelled or failed");
     },
     onEvent: (eventName, metadata) => {
-      console.log("Plaid Link event:", eventName, metadata);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Plaid Link event:", eventName, metadata);
+      }
     },
   };
 
   const { open, ready } = usePlaidLink(config);
 
   return (
-    <>
-      {variant === "primary" ? (
-        <Button
-          onClick={() => open()}
-          disabled={!ready}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          Connect Bank
-        </Button>
-      ) : variant === "ghost" ? (
-        <Button onClick={() => open()} disabled={!ready} variant="ghost">
-          Connect Bank
-        </Button>
-      ) : (
-        <Button onClick={() => open()} disabled={!ready} variant="default">
-          Connect Bank
-        </Button>
-      )}
-    </>
+    <div className="flex flex-col gap-2">
+      <Button
+        onClick={() => open()}
+        disabled={!ready || loading}
+        variant={variant}
+        className={
+          variant === "primary"
+            ? "bg-blue-600 hover:bg-blue-700 text-white"
+            : undefined
+        }
+      >
+        {loading ? "Loading..." : "Connect Bank"}
+      </Button>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+    </div>
   );
 };
 
